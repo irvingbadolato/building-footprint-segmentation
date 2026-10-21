@@ -52,7 +52,7 @@ class BaseLoader(Dataset):
                 "train",
             ),
             shuffle=True,
-            num_workers=0,
+            num_workers=2,
             batch_size=batch_size,
             pin_memory=torch.cuda.is_available(),
         )
@@ -61,7 +61,7 @@ class BaseLoader(Dataset):
                 root_folder, image_normalization, label_normalization, Compose([]), "val"
             ),
             shuffle=True,
-            num_workers=0,
+            num_workers=2,
             batch_size=batch_size,
             pin_memory=torch.cuda.is_available(),
         )
@@ -71,7 +71,7 @@ class BaseLoader(Dataset):
                 root_folder, image_normalization, label_normalization, Compose([]), "test"
             ),
             shuffle=True,
-            num_workers=0,
+            num_workers=2,
             batch_size=batch_size,
             pin_memory=torch.cuda.is_available(),
         )
