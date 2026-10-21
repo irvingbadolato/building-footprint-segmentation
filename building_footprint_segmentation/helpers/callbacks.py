@@ -224,8 +224,7 @@ class TrainStateCallback(Callback):
         self.chk = os.path.join(state, "default.pt")
         self.best = os.path.join(state, "best.pt")
         self._setup_done = True
-
-
+        
     def on_epoch_end(self, epoch, logs=None):
         valid_loss = logs["valid_loss"]
         my_state = logs["state"]
@@ -539,16 +538,16 @@ class VisualizationCallback(Callback):
             
             # Plot curves periodically
             if (epoch + 1) % self.plot_frequency == 0:
-                print(f"\nGenerating training curves at epoch {epoch + 1}...")
+                logger.debug(f"\nGenerating training curves at epoch {epoch + 1}...")
                 self.visualizer.plot_training_curves(
                     save_name=f'training_curves_epoch_{epoch+1}.png'
                 )
     
     def on_end(self, logs=None):
         """Generate final plots when training completes"""
-        print("\n" + "="*60)
-        print("Training Complete - Generating Final Visualizations")
-        print("="*60)
+        #print("\n" + "="*60)
+        logger.debug("Training Complete - Generating Final Visualizations")
+        #print("="*60)
         
         # Generate final training curves
         self.visualizer.plot_training_curves(save_name='final_training_curves.png')
@@ -556,18 +555,23 @@ class VisualizationCallback(Callback):
         # Save metrics to CSV
         #self.visualizer.save_metrics_csv('training_metrics.csv')
         
-        print("Visualization complete!")
+        logger.debug("Visualization complete!")
     
     def interruption(self, logs=None):
         """Generate plots when training is interrupted"""
-        print("\n" + "="*60)
-        print("Training Interrupted - Saving Current Visualizations")
-        print("="*60)
+        #print("\n" + "="*60)
+        logger.debug("Training Interrupted - Saving Current Visualizations")
+        #print("="*60)
+        one_liner.one_line(
+            tag="Training Interrupted",
+            tag_color="cyan",
+            to_reset_data=True,
+            to_new_line_data=True,
+        )
         
         if len(self.visualizer.history['epochs']) > 0:
             self.visualizer.plot_training_curves(save_name='interrupted_training_curves.png')
             self.visualizer.save_metrics_csv('interrupted_metrics.csv')
-
 
 class AUCCallback(Callback):
     """Separate callback to compute AUC during validation"""
@@ -592,7 +596,7 @@ class AUCCallback(Callback):
         """Compute and plot AUC curves periodically"""
         if (epoch + 1) % self.compute_frequency == 0:
             if logs and 'model' in logs :
-                print(f"\nComputing AUC curves at epoch {epoch + 1}...")
+                logger.debug(f"\nComputing AUC curves at epoch {epoch + 1}...")
                 
                 model = logs['model']
                 val_loader = None
@@ -638,7 +642,7 @@ class AUCCallback(Callback):
     def on_end(self, logs=None):
         """Compute final AUC curves when training completes"""
         if logs and 'model' in logs and 'test_loader' in logs:
-            print("\nComputing final AUC curves...")
+            logger.debug("\nComputing final AUC curves...")
             
             model = logs['model']
             test_loader = logs['test_loader']
