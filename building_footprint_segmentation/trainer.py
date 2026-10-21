@@ -157,6 +157,10 @@ class Trainer:
                     to_reset_data=True,
                 )
 
+                if any(getattr(cb, "should_stop", False) for cb in self.callbacks):
+                    logger.debug("Early stopping triggered")
+                    break
+                    
             except KeyboardInterrupt:
                 progress_bar.close()
                 self.callbacks.interruption(
