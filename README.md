@@ -69,8 +69,8 @@ However if it doesn't work simply copy paste it to the environment folder.
 To reproduce the experiments in this project, the folder structure of the dataset is highly relevant; here is an example of the expected structure for your training and evaluation data:
 ```
 .
-├── data/rio/building_patches/                # Dataset directory, this is the expected
-   ├──train/								  # format, other formats wont work.
+├── data/rio/building_patches/  # Dataset directory, this is the expected
+   ├──train/                    # format, other formats wont work.
       ├──images
       ├──labels       
 	├──val/
