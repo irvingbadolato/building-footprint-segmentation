@@ -85,6 +85,7 @@ class Trainer:
                 )
             )
             progress_bar.set_description("Epoch {}, lr {}".format(ongoing_epoch, lr))
+            logger.info("Epoch {}, lr {} started...".format(ongoing_epoch, lr))
 
             try:
                 logger.debug("Setting Learning rate : {}".format(lr))
@@ -125,6 +126,9 @@ class Trainer:
                     },
                 )
 
+                logger.info(
+                    "Train Loss {}, Valid Loss {}".format(train_loss, valid_loss)
+                )
                 logger.debug(
                     "Train Loss {}, Valid Loss {}".format(train_loss, valid_loss)
                 )
@@ -467,13 +471,13 @@ class EnhancedTrainingVisualizer:
         
         save_path = os.path.join(self.save_dir, save_name)
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Training curves saved to: {save_path}")
+        logger.debug(f"Training curves saved to: {save_path}")
         plt.close()
     
     def plot_auc_curves(self, save_name='auc_curves.png'):
         """Plot ROC and Precision-Recall curves"""
         if len(self.all_predictions) == 0:
-            print("No predictions collected for AUC calculation")
+            logger.debug("No predictions collected for AUC calculation")
             return None, None
         
         predictions = np.array(self.all_predictions)
@@ -529,9 +533,9 @@ class EnhancedTrainingVisualizer:
         
         save_path = os.path.join(self.save_dir, save_name)
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"AUC curves saved to: {save_path}")
-        print(f"ROC-AUC: {roc_auc:.4f}, PR-AUC: {pr_auc:.4f}")
-        print(f"Optimal Threshold: {optimal_threshold:.4f}")
+        logger.debug(f"AUC curves saved to: {save_path}")
+        logger.debug(f"ROC-AUC: {roc_auc:.4f}, PR-AUC: {pr_auc:.4f}")
+        logger.debug(f"Optimal Threshold: {optimal_threshold:.4f}")
         plt.close()
         
         return roc_auc, pr_auc, optimal_threshold
