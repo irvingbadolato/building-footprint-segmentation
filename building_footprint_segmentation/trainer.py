@@ -192,7 +192,12 @@ class Trainer:
             to_reset_data=True,
             to_new_line_data=True,
         )
-        self.callbacks.on_end()
+        self.callbacks.on_end(
+            logs={
+                "model": self.model,
+                "test_loader": self.loader.test_loader,
+            }
+        )
 
     def state_train(
         self, step: int, progress_bar
