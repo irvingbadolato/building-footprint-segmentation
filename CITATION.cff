@@ -1,9 +1,14 @@
 cff-version: 1.0.0
-message: "Please cite this repository If you found it helpful in your reserach."
+message: "Please cite this repository if you found it helpful in your research."
 preferred-citation:
   type: generic
   authors:
+  - family-names: "Badolato"
+    given-names: "Irving"
+    orcid: https://orcid.org/0000-0002-4058-4392
+    affiliation: Universidade do Estado do Rio de Janeior (UERJ)
   - family-names: "Santana"
     given-names: "Daniel"
-  title: "building-footprint-segmentation resnet50"
-  url: "https://github.com/Daniel-ime/building-footprint-segmentation-resnet50"
+    affiliation: Instituto Militar de Engenharia (IME)
+  title: "building-footprint-segmentation"
+  url: "https://github.com/irvingbadolato/building-footprint-segmentation"
