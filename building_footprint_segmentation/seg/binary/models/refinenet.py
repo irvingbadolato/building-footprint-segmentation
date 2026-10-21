@@ -183,8 +183,18 @@ class ReFineNet(nn.Module):
     ):
         super().__init__()
         self.num_classes = num_classes
-        res_net = getattr(models, res_net_to_use)(pretrained=pre_trained_image_net)
 
+        #res_net = getattr(models, res_net_to_use)(pretrained=pre_trained_image_net)
+        weights_map = {
+            "resnet50": models.ResNet50_Weights,
+            "resnet34": models.ResNet34_Weights,
+        }
+        weights_enum = weights_map[res_net_to_use]
+        if pre_trained_image_net:
+            res_net = getattr(models, res_net_to_use)(weights=weights_enum.IMAGENET1K_V1)
+        else:
+            res_net = getattr(models, res_net_to_use)(weights=None)
+    
         if not top_layers_trainable:
             for param in res_net.parameters():
                 param.requires_grad = False
