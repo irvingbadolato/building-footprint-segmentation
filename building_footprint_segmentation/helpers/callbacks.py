@@ -368,6 +368,7 @@ class TimeCallback(Callback):
 
 
 class TrainChkCallback(Callback):
+    def __init__(self, log_dir):
         super().__init__(log_dir=None)
         self.chk = None
         self._setup_done = False
