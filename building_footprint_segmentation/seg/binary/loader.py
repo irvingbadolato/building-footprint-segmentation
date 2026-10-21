@@ -55,10 +55,15 @@ class BinaryLoader(BaseLoader):
             }
 
         elif self.mode == "test":
-            image = load_image(str(self.images[idx]))
+            raw_images = load_image(str(self.images[idx]))
+            ground_truth = load_image(str(self.labels[idx]))
+            image = self.image_normalization(raw_images)
+            ground_truth = self.ground_truth_normalization(ground_truth)
             return {
-                "images": to_input_image_tensor(image),
+                "raw_images": to_input_image_tensor(raw_images),
                 "file_name": os.path.basename(str(self.images[idx])),
+                "images": to_input_image_tensor(image),
+                "ground_truth": to_input_image_tensor(ground_truth),
             }
         else:
             raise NotImplementedError
