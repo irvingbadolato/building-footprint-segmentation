@@ -4,8 +4,9 @@ import time
 import traceback
 from typing import Union, Tuple, Any
 
-import numpy as np
 import cv2
+import numpy as np
+from osgeo import gdal
 from torch import Tensor
 
 from building_footprint_segmentation.utils.date_time import get_time
@@ -166,7 +167,7 @@ def perform_scale(
     return img
 
 
-def load_image(path: str):
+def load_image_cv(path: str):
     """
 
     :param path:
@@ -175,6 +176,36 @@ def load_image(path: str):
     img = cv2.imread(path)
     return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
+gdal.DontUseExceptions()
+def load_image(path: str, avoid_int_nodata = True) -> np.ndarray:
+    """Read raster using GDAL returning (arr)
+
+    arr shape: (C, H, W) for multi-band, or (1,H,W) for single band.
+    meta contains per-band nodata and dtype info: {'nodata': [v1,v2,...], 'dtype': gdaltype}
+    if avoid_int_nodata is active all int gdaltypes returns None as nodata
+    """
+    int_types = {gdal.GDT_Byte,
+                 gdal.GDT_UInt16, gdal.GDT_Int16,
+                 gdal.GDT_UInt32, gdal.GDT_Int32,
+                 gdal.GDT_UInt64, gdal.GDT_Int64}
+    ds = gdal.Open(path, gdal.GA_ReadOnly)
+    if ds is None:
+        raise RuntimeError(f"GDAL could not open {path}")
+    bands = ds.RasterCount
+    h = ds.RasterYSize
+    w = ds.RasterXSize
+    arrs = []
+    nodatas = []
+    types = []
+    for b in range(1, bands + 1):
+        band = ds.GetRasterBand(b)
+        nd = None if avoid_int_nodata and band.DataType in int_types else band.GetNoDataValue()
+        data = band.ReadAsArray().astype(np.float32)        
+        arrs.append(data)
+        nodatas.append(nd)
+        types.append(band.DataType)
+    arr = np.stack(arrs, axis=-1)  
+    return arr[:,:,:3]
 
 def to_binary(
     prediction: Union[np.ndarray, Tensor], cutoff=0.40
