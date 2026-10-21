@@ -369,6 +369,7 @@ class EnhancedTrainingVisualizer:
         ax2.set_title('Accuracy', fontsize=14, fontweight='bold')
         ax2.set_xlabel('Epoch')
         ax2.set_ylabel('Accuracy')
+        ax2.set_ylim(.5, 1.)
         ax2.legend()
         ax2.grid(True, alpha=0.3)
         
@@ -387,6 +388,7 @@ class EnhancedTrainingVisualizer:
         ax4.set_title('Precision', fontsize=14, fontweight='bold')
         ax4.set_xlabel('Epoch')
         ax4.set_ylabel('Precision')
+        ax4.set_ylim(.5, 1.)
         ax4.legend()
         ax4.grid(True, alpha=0.3)
         
@@ -396,6 +398,7 @@ class EnhancedTrainingVisualizer:
         ax5.set_title('Recall', fontsize=14, fontweight='bold')
         ax5.set_xlabel('Epoch')
         ax5.set_ylabel('Recall')
+        ax5.set_ylim(.5, 1.)
         ax5.legend()
         ax5.grid(True, alpha=0.3)
         
@@ -405,6 +408,7 @@ class EnhancedTrainingVisualizer:
         ax6.set_title('F1 Score', fontsize=14, fontweight='bold')
         ax6.set_xlabel('Epoch')
         ax6.set_ylabel('F1 Score')
+        ax6.set_ylim(.5, 1.)
         ax6.legend()
         ax6.grid(True, alpha=0.3)
         
@@ -415,6 +419,7 @@ class EnhancedTrainingVisualizer:
         ax7.set_title('IoU (Intersection over Union)', fontsize=14, fontweight='bold')
         ax7.set_xlabel('Epoch')
         ax7.set_ylabel('IoU')
+        ax7.set_ylim(.5, 1.)
         ax7.legend()
         ax7.grid(True, alpha=0.3)
         
