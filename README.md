@@ -94,4 +94,4 @@ In the "dataset crop" notebook, the preprocessing operations performed on the Ri
 
 ### Run experiments
 
-All other notebooks in the examples directory assume that a dataset - following the proposed structure - has been preprocessed, and that the configuration files and the environment variable have been set up beforehand. A script for coordinating the execution of the proposed experiments can be found in `run_experiments.py file. Running it without modifications results in 3 rounds of training and evaluation for 8 proposed experimental configurations.
+All other notebooks in the examples directory assume that a dataset - following the proposed structure - has been preprocessed, and that the configuration files and the environment variable have been set up beforehand. A script for coordinating the execution of the proposed experiments can be found in `run_experiments.py` file. Running it without modifications results in 3 rounds of training and evaluation for 8 proposed experimental configurations.
