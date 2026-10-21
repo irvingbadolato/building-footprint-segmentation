@@ -33,7 +33,7 @@ Optimizer:
   lr: 1e-4
 
 Callbacks:
-  log_dir: '/path_to_save_the_logs_of_experiments/RefineNet_resnet50_massachusetts/'
+  log_dir: '/path_to_the_logs_of_experiments/RefineNet_resnet50_massachusetts/'
   callers:
     - TrainChkCallback
     - TimeCallback
