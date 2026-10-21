@@ -29,9 +29,11 @@ logger = logging.getLogger("segmentation")
 
 
 class CallbackList(object):
-    def __init__(self, callbacks=None):
+    def __init__(self, callbacks=None, base_log_dir=None):
         callbacks = callbacks or []
         self.callbacks = [c for c in callbacks]
+        self.base_log_dir = base_log_dir     
+        self.log_dir = None # Will be the base_log_dir with timestamp
         if len(callbacks) != 0:
             [
                 logger.debug("Registered {}".format(c.__class__.__name__))
@@ -91,12 +93,20 @@ class CallbackList(object):
 
     def on_begin(self, logs=None):
         logs = logs or {}
+        if self.log_dir is None:
+            if self.base_log_dir is None:
+                raise ValueError(
+                    "base_log_dir needs to be different from none to define log_dir"
+                )
+            self.log_dir = resolve_run_log_dir(self.base_log_dir)
         for callback in self.callbacks:
             logger.debug("On Begin {}".format(callback.__class__.__name__))
             if not is_overridden_func(callback.on_begin):
                 logger.debug(
                     "Nothing Registered On Begin {}".format(callback.__class__.__name__)
                 )
+            callback.log_dir = self.log_dir
+            callback.setup()
             callback.on_begin(logs)
 
     def on_end(self, logs=None):
@@ -137,10 +147,11 @@ class CallbackList(object):
 
 class Callback(object):
     def __init__(self, log_dir):
-        self.log_dir = os.path.join(
-            log_dir, datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        )
-
+        self.log_dir = log_dir 
+        
+    def on_begin(self, logs=None):
+        pass
+        
     def on_epoch_begin(self, epoch, logs=None):
         pass
 
@@ -163,6 +174,9 @@ class Callback(object):
         pass
 
     def update_params(self, params):
+        pass
+        
+    def setup(self):
         pass
 
 class EarlyStoppingCallback(Callback):
@@ -190,23 +204,35 @@ class EarlyStoppingCallback(Callback):
                     to_reset_data=True,
                     to_new_line_data=True,
                 )
-
+                
 class TrainStateCallback(Callback):
     """
     Save the training state
     """
 
-    def __init__(self, log_dir):
+    def __init__(self, log_dir=None):
         super().__init__(log_dir)
+        self.chk = None
+        self.best = None
+        self.previous_best = None
+        self._setup_done = False
+        
+    def setup(self):
+        if self._setup_done: 
+            return
         state = make_directory(self.log_dir, "state")
         self.chk = os.path.join(state, "default.pt")
         self.best = os.path.join(state, "best.pt")
+        self._setup_done = True
 
-        self.previous_best = None
 
     def on_epoch_end(self, epoch, logs=None):
         valid_loss = logs["valid_loss"]
         my_state = logs["state"]
+        if self.previous_best is None: # (resume-safe)
+            self.previous_best = my_state.get("bst_vld_loss")
+            if self.previous_best == "NA":
+                self.previous_best = None
         if self.previous_best is None or valid_loss < self.previous_best:
             self.previous_best = valid_loss
             torch.save(my_state, str(self.best))
@@ -231,9 +257,18 @@ class TensorBoardCallback(Callback):
 
     def __init__(self, log_dir):
         super().__init__(log_dir)
+        self.writer = None
+        self._setup_done = False
+        
+    def setup(self):
+        if self._setup_done: 
+            return
         self.writer = SummaryWriter(make_directory(self.log_dir, "events"))
+        self._setup_done = True
 
     def plt_scalar(self, y, x, tag):
+        if self.writer is None:
+            raise RuntimeError("TensorBoardCallback.setup() was not called")
         if type(y) is dict:
             self.writer.add_scalars(tag, y, global_step=x)
             self.writer.flush()
@@ -288,19 +323,22 @@ class TensorBoardCallback(Callback):
 
 
 class SchedulerCallback(Callback):
-    def __init__(self, scheduler):
-        super().__init__(None)
+    def __init__(self, scheduler, log_dir=None):
+        super().__init__(log_dir)
         self.scheduler = scheduler
 
     def on_epoch_end(self, epoch, logs=None):
-        self.scheduler.step(epoch)
+        if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+            self.scheduler.step(logs["valid_loss"])
+        else:
+            self.scheduler.step(epoch)
         logger.debug(
             "Successful on Epoch End {}, Lr Scheduled".format(self.__class__.__name__)
         )
 
 
 class TimeCallback(Callback):
-    def __init__(self, log_dir):
+    def __init__(self, log_dir=None):
         super().__init__(log_dir)
         self.start_time = None
 
@@ -331,9 +369,15 @@ class TimeCallback(Callback):
 
 
 class TrainChkCallback(Callback):
-    def __init__(self, log_dir):
-        super().__init__(log_dir)
+        super().__init__(log_dir=None)
+        self.chk = None
+        self._setup_done = False
+        
+    def setup(self):
+        if self._setup_done: 
+            return
         self.chk = os.path.join(make_directory(self.log_dir, "chk_pth"), "chk_pth.pt")
+        self._setup_done = True
 
     def on_epoch_end(self, epoch, logs=None):
         my_state = logs["state"]
@@ -353,8 +397,14 @@ class TrainChkCallback(Callback):
 #torch.save(adjust_model(my_state["model"]), str(self.chk)) changed this for possible model corruption
 
 class TestDuringTrainingCallback(Callback):
-    def __init__(self, log_dir):
+    def __init__(self, log_dir=None):
         super().__init__(log_dir)
+        self.test_path = None
+        self._setup_done = False
+
+    def setup(self):
+        if self._setup_done: 
+            return
         self.test_path = os.path.join(self.log_dir, "test_on_epoch_end")
 
     def on_epoch_end(self, epoch, logs=None):
@@ -368,7 +418,7 @@ class TestDuringTrainingCallback(Callback):
             for i, test_data in enumerate(test_loader):
                 self.inference(
                     model,
-                    gpu_variable(test_data["images"]),
+                    gpu_variable(test_data["raw_images"]),
                     test_data["file_name"],
                     make_directory(
                         os.path.dirname(self.test_path),
@@ -387,7 +437,7 @@ class TestDuringTrainingCallback(Callback):
 
 
 class BinaryTestCallback(TestDuringTrainingCallback):
-    def __init__(self, log_dir, threshold: float = 0.20):
+    def __init__(self, log_dir, threshold: float = 0.45):
         super().__init__(log_dir)
         self._threshold = threshold
 
@@ -415,14 +465,22 @@ class BinaryTestCallback(TestDuringTrainingCallback):
                 os.path.join(save_path, f"{file_name[i]}.png"), prediction_numpy * 255
             )
 
+def resolve_run_log_dir(base_log_dir: str) -> str:
+    return os.path.join(
+        base_log_dir, datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    )
 
-def load_default_callbacks(log_dir: str):
-    return [
-        TrainChkCallback(log_dir),
-        TimeCallback(log_dir),
-        TensorBoardCallback(log_dir),
-        TrainStateCallback(log_dir),
-    ]
+def load_default_callbacks(base_log_dir: str):
+    return CallbackList(
+        callbacks=[
+            TrainChkCallback(),
+            TimeCallback(),
+            TensorBoardCallback(),
+            TrainStateCallback(),
+        ],
+        base_log_dir=base_log_dir,
+    )
+
 
 
 def load_callback(log_dir: str, callback: str) -> Callback:
@@ -437,8 +495,8 @@ def load_callback(log_dir: str, callback: str) -> Callback:
 
 class VisualizationCallback(Callback):
     """Callback to visualize training progress and generate AUC curves"""
-    
-    def __init__(self, log_dir, visualizer, plot_frequency=5, collect_auc_data=True):
+   
+    def __init__(self, log_dir=None, visualizer=None, plot_frequency=5, collect_auc_data=True):
         """
         Args:
             log_dir: Directory to save logs
@@ -452,7 +510,14 @@ class VisualizationCallback(Callback):
         self.collect_auc_data = collect_auc_data
         self.current_epoch_predictions = []
         self.current_epoch_targets = []
-    
+        self._setup_done = False
+        
+    def setup(self):
+        if self._setup_done: 
+            return
+        self.visualizer.save_dir = self.log_dir
+        self._setup_done = True
+        
     def on_epoch_begin(self, epoch, logs=None):
         """Reset AUC data collection at the start of each epoch"""
         if self.collect_auc_data:
