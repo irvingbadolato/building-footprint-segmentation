@@ -14,7 +14,7 @@ Criterion:
   dice_weights: 1.0
 
 Loader:
-  root: /home/irvingbadolato/Documentos/thesis/building-footprint-segmentation/data/rio/building_patches/filtered/
+  root: /path_to_the_dataset/rio/building_patches/filtered/
   image_normalizer: min_max_image_net
   label_normalizer: binary_label
   augmenters:
@@ -34,7 +34,7 @@ Optimizer:
   lr: 1e-4
 
 Callbacks:
-  log_dir: '/home/irvingbadolato/Documentos/thesis/building-footprint-segmentation/logs/UNet_resnet50/'
+  log_dir: '/path_to_the_logs_of_the_experiments/UNet_resnet50/'
   callers:
     - TrainChkCallback
     - TimeCallback
