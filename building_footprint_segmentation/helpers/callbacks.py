@@ -165,6 +165,31 @@ class Callback(object):
     def update_params(self, params):
         pass
 
+class EarlyStoppingCallback(Callback):
+    def __init__(self, log_dir=None, patience=10, min_delta=0.0):
+        super().__init__(log_dir)
+        self.patience = patience
+        self.min_delta = min_delta
+        self.best = None
+        self.wait = 0
+        self.should_stop = False
+
+    def on_epoch_end(self, epoch, logs=None):
+        val = logs["valid_loss"]
+        if self.best is None or val < self.best - self.min_delta:
+            self.best = val
+            self.wait = 0
+        else:
+            self.wait += 1
+            if self.wait >= self.patience:
+                self.should_stop = True
+                logger.debug(f"Early stopping at epoch {epoch}") 
+                one_liner.one_line(
+                    tag=f"Early stopping at epoch {epoch}",
+                    tag_color="cyan",
+                    to_reset_data=True,
+                    to_new_line_data=True,
+                )
 
 class TrainStateCallback(Callback):
     """
