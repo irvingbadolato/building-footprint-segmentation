@@ -1,0 +1,42 @@
+Segmentation: binary
+
+Model:
+  name: ReFineNet
+  param:
+    res_net_to_use: resnet50
+    pre_trained_image_net: true
+    top_layers_trainable: true
+    num_classes: 1
+
+Criterion:
+    name: Dice
+    dice_weights: 1.0
+
+Loader:
+    root: /path_to_the_dataset/rio/building_patches/filtered/
+    image_normalizer: divide_by_255
+    label_normalizer: binary_label
+    augmenters:
+      - horizontal_flip
+      - random_rotation_90
+    batch_size: 16
+
+Metrics:
+  - accuracy
+  - precision
+  - f1
+  - recall
+  - iou
+
+Optimizer:
+  name: AdamW
+  lr: 1e-4
+
+Callbacks:
+  log_dir: '/path_to_the_logs_of_experiments/RefineNet_resnet50/'
+  callers:
+    - TrainChkCallback
+    - TimeCallback
+    - TensorBoardCallback
+    - TrainStateCallback
+    - EarlyStoppingCallback
