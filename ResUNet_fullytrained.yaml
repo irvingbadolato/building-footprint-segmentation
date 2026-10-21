@@ -12,7 +12,7 @@ Criterion:
   dice_weights: 1.0
 
 Loader:
-  root: /home/irvingbadolato/Documentos/thesis/building-footprint-segmentation/data/rio/building_patches/filtered/
+  root: /path_to_the_dataset/rio/building_patches/filtered/
   image_normalizer: divide_by_255
   label_normalizer: binary_label
   augmenters:
@@ -32,7 +32,7 @@ Optimizer:
   lr: 1e-4
 
 Callbacks:
-  log_dir: '/home/irvingbadolato/Documentos/thesis/building-footprint-segmentation/logs/ResUNet_fullytrained/'
+  log_dir: '/path_to_the_logs_of_the_experiments/ResUNet_fullytrained/'
   callers:
     - TrainChkCallback
     - TimeCallback
