@@ -1,0 +1,43 @@
+Segmentation: binary
+
+Model:
+  name: UNetResNet50
+  param:
+    in_channels: 3
+    num_classes: 1
+    pre_trained_image_net: true
+    top_layers_trainable: true
+    decoder_channels: [256, 128, 64, 32]
+
+Criterion:
+  name: Dice
+  dice_weights: 1.0
+
+Loader:
+  root: /home/irvingbadolato/Documentos/thesis/building-footprint-segmentation/data/rio/building_patches/filtered/
+  image_normalizer: min_max_image_net
+  label_normalizer: binary_label
+  augmenters:
+    - horizontal_flip
+    - random_rotation_90
+  batch_size: 16
+
+Metrics:
+  - accuracy
+  - precision
+  - f1
+  - recall
+  - iou
+
+Optimizer:
+  name: AdamW
+  lr: 1e-4
+
+Callbacks:
+  log_dir: '/home/irvingbadolato/Documentos/thesis/building-footprint-segmentation/logs/UNet_resnet50/'
+  callers:
+    - TrainChkCallback
+    - TimeCallback
+    - TensorBoardCallback
+    - TrainStateCallback
+    - EarlyStoppingCallback
