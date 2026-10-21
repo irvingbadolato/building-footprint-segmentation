@@ -17,7 +17,8 @@ def binary_label(mask: np.ndarray) -> np.ndarray:
     :param mask:
     :return:
     """
-    mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY)
+    if mask.ndim == 3 and mask.shape[2] == 3:
+        mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY)
     #normalized_mask = divide_by_255(mask)
     normalized_mask = (mask>0).astype(np.uint8)
     if len(normalized_mask.shape) == 3:
