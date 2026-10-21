@@ -1,9 +1,8 @@
 ﻿
 
 # Building Footprint Segmentation with RefiNet
-![](output.1png)
 
-A deep learning project for segmenting building footprints from aerial/satellite imagery using RefiNet architecture. This project is based on [building-footprint-segmentation](https://github.com/fuzailpalnak/building-footprint-segmentation) with significant modifications and improvements.
+This repository extends [Daniel](https://github.com/Daniel-ime/building-footprint-segmentation-resnet50)’s proposal for segmenting building footprints from aerial imagery using the RefineNet model. A new set of experiments is proposed, focusing on the same study areas of interest to the Pereira Passos Municipal Institute of Urban Planning (IPP). The cropping methodology has been revised, and the dataset for the municipality of Rio de Janeiro has undergone curation.
 
 ## Overview
 
@@ -32,23 +31,20 @@ This project uses advanced segmentation techniques to identify and extract build
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Daniel-ime/building-footprint-segmentation-resnet50
+git clone https://github.com/irvingbadolato/building-footprint-segmentation
 ```
 
 ### 2. Create Conda Environment
 
 ```bash
-conda create -n building-seg python=3.12
-conda activate building-seg
+conda create -n your_env_for_seg python=3.12
+conda activate your_env_for_seg
 
 ```
 
 ### 3. Install PyTorch
 
-**For AMD GPUs (ROCm):**
-Use the specific installation guide from : [ROCm]( https://rocm.docs.amd.com/projects/install-on-linux/en/develop/install/3rd-party/pytorch-install.html) and install the other required packages afterwards.
-
-
+Refer to the [get started](https://pytorch.org/get-started/locally/) section on the official PyTorch website and select a command to install the stable version via pip, based on your hardware configuration and operating system. Keep in mind that this project is developed in Python.
 
 ### 4. Install Other Required Packages
 
@@ -65,39 +61,12 @@ Implementation was done in a way that it is necessary to have the main folder in
 ```bash
 pip install building-footprint-segmentation
 ```
+
 However if it doesn't work simply copy paste it to the environment folder.
-## Usage
-### Prediction path
-Inference is run by [Inference](examples/Prediction.ipynb) where  the two inputs needed are the 'image to be predicted' file path :
-```python
-MAX_SIZE  =  384
-TRAINED_MODEL  =  ReFineNet()
-PRED_PTH  =  r"your/image/path.tif"
-```
-and the second input needed is the Custom Weights path:
-```python
-CUSTOM_WEIGHTS  =  r"your/weights/path.pt"
-```
-There are provided weights in the logs/mass_building_seg folder, and the result images that will be shown afterwards were generated with the finalversionrio_resnet50_batchs16_th.45epch100 best.pt file
-### Training path
-Training is done through [Training](examples/Run with config.ipynb), inputs are generally in the yaml file, resnet50rio is a great example of that and was the one used in the model showed on the results bellow
-
-```python
-config_path  =  r"/home/ippws/building-footprint-segmentation/resnet50rio.yaml"
-```
-However, lr and weight decay are implemented directly on the optimizer:
-```python
-optimizer  =  segmentation.load_optimizer(model, name=config["Optimizer"]["name"], lr=  1e-4, weight_decay  =  1e-5)
-```
-### Results
-![Results](output1.png)
-
-![Results](output2.png)
-
-![Training Curves](training_curves_epoch_25.png)
 
 ## Project Structure
-For training, the folder structure of the project is very relevant, this is an example of the expected structure from your training data:
+
+To reproduce the experiments in this project, the folder structure of the dataset is highly relevant; here is an example of the expected structure for your training and evaluation data:
 ```
 .
 ├── data/rio/building_patches/                # Dataset directory, this is the expected
@@ -111,55 +80,18 @@ For training, the folder structure of the project is very relevant, this is an e
       ├──images
       ├──labels
 ```
-It is also very relevant to mention that the image and label inputs will be normalized, the results above were normalized with the divided_by_255 function and binary_label functions for the images and labels respectively:
-```python
-def  divide_by_255(img: np.ndarray) -> np.ndarray:
-	return  img  /  255
 
-def  binary_label(mask: np.ndarray) -> np.ndarray:
-	mask  =  cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY)
-	normalized_mask  = (mask>0).astype(np.uint8)
-	if  len(normalized_mask.shape) ==  3:
-		normalized_mask  =  normalized_mask[:,:,0]
-	return  np.expand_dims(normalized_mask, -1)
-```
-This means that your label input will be converted to Gray scale and then be forced to become 0 or 1s, if your label is already a binary image you should skip this normalization process. The Rio dataset used had an 8bit image label.
+This project uses GDAL; therefore, image formats suitable for spatial data are supported. Only the first three bands of each image will be used. This approach was adopted to allow for the use of a ResNet encoder pre-trained on ImageNet data.
+All models in this set of experiments perform binary segmentation. Therefore, data normalization assumes that pixels with non-zero values ​​in any of the label channels are to be considered as the object. In other words, the background must be labeled as zero.
 
-Also images need to be croped to 384,384,3 dimensions so there is a code provided in [Crop](newcodes/crop.py) that will do that, just change the inputs to your original image size:
-```python
-ORIGINAL_DIM_OF_IMAGE  = (15899, 21817, 3) # put your size here
-```
-And finally threshold changes must be done directly in [Metrics](building_footprint_segmentation/helpers/metrics.py):
-```python
-class  BinaryMetric(MetricList):
-	def  __init__(self, metrics: list):
-		super().__init__(metrics)
-		self._activation  =  "sigmoid"
-		self._threshold  =  0.45
+## Usage
 
-	def  metric_activation(self, prediction):
-		prediction  =  prediction.sigmoid()
-		prediction[prediction  >=  self._threshold] =  1
-		prediction[prediction  <  self._threshold] =  0
-		return  prediction
-```
-## Modifications from Original
+All the experiments in the examples use an environment variable to configure the local project path. Before using the provided scripts, it is recommended to update this variable in the `environment.py` file. All YAML configuration files also assume that the base paths for the dataset and for log storage have been updated.
 
-This project includes significant changes and improvements over the [original repository](https://github.com/fuzailpalnak/building-footprint-segmentation), including:
+### Dataset preprocessing
 
--   weight decay implementation and learning rate fix
--   Resnet50 backbone was used instead of 34
--   Fixed normalization issues for non completely white labels 
--   Fixed normalization issues for inference 
--  implemented AuC curve generation and general trainning curves generation without the need of tensorboard
+In the "dataset crop" notebook, the preprocessing operations performed on the Rio de Janeiro dataset were detailed. The orthomosaics in the Rio de Janeiro dataset are quite large (approximately 15k rows by 21k columns). The approach taken involves, in short, dividing these images into smaller, non-overlapping blocks, which are then partitioned into training, validation, and test sets. These blocks are further subdivided into patches, with their size determined by the network's input dimensions (384x384 pixels); in this step, the cropping process allows for overlap. Patches containing only a small number of pixels representing buildings are discarded. The assignment of each block to a specific set (training, validation, or test) is based on the number of patches that remain after the discarding process. By separating the data at the block level rather than the patch level, the spatial adjacency between the datasets is minimized, which facilitates a more robust evaluation of the models' generalizability.
 
-## Acknowledgments
+### Run experiments
 
-Based on the work by [fuzailpalnak](https://github.com/fuzailpalnak/building-footprint-segmentation).
-
-Hardware provided by Instituto Municipal de Urbanismo Pereira Passos - IPP
-
-
-## Contact
-You can contact me at santana.daniel@ime.eb.br
-
+All other notebooks in the examples directory assume that a dataset - following the proposed structure - has been preprocessed, and that the configuration files and the environment variable have been set up beforehand. A script for coordinating the execution of the proposed experiments can be found in run_experiments.py file. Running it without modifications results in 3 rounds of training and evaluation for 8 proposed experimental configurations.
